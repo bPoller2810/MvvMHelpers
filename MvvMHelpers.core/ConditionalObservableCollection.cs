@@ -7,24 +7,25 @@ using System.Linq;
 
 namespace MvvMHelpers.core
 {
-    public class ConditionalObservableCollection<T> : IEnumerable<T>, INotifyCollectionChanged, INotifyPropertyChanged
+    public class ConditionalObservableCollection<T>
+        : IEnumerable<T>, INotifyCollectionChanged, INotifyPropertyChanged
         where T : class
     {
         #region private member
         private readonly Predicate<T> _predicate;
-        private readonly List<KeyValuePair<bool, T>> _internalItems;
+        private readonly List<ItemContainer> _internalItems;
         #endregion
 
         #region properties
         public int Count => _internalItems.Count;
-        public int VisibleCount => _internalItems.Count(i => _predicate(i.Value));
+        public int VisibleCount => _internalItems.Count(i => _predicate(i.Item));
         #endregion
 
         #region ctor
         public ConditionalObservableCollection(Predicate<T> predicate)
         {
             _predicate = predicate;
-            _internalItems = new List<KeyValuePair<bool, T>>();
+            _internalItems = new List<ItemContainer>();
         }
         #endregion
 
@@ -41,9 +42,9 @@ namespace MvvMHelpers.core
         {
             foreach (var item in _internalItems)
             {
-                if (_predicate(item.Value))
+                if (_predicate(item.Item))
                 {
-                    yield return item.Value;
+                    yield return item.Item;
                 }
             }
         }
@@ -53,70 +54,96 @@ namespace MvvMHelpers.core
         }
         #endregion
 
-        #region IList<T>
+        #region public methods
         public void Add(T item)
         {
-            if (_internalItems.Any(i => i.Value == item))
+            if (_internalItems.Any(i => i.Item == item))
             {
                 return;
             }
             var isVisible = _predicate(item);
-            _internalItems.Add(new KeyValuePair<bool, T>(isVisible, item));
-            RaiseCollectionAdd(item);
-            if (isVisible)
-            {
-                RaisePropertyChanged(nameof(VisibleCount));
-            }
-        }
-        public int IndexOf(T item)
-        {
-            var existing = _internalItems.FirstOrDefault(i => i.Value == item);
-            return _internalItems.IndexOf(existing);
-        }
-        public void Insert(int location, T item)
-        {
-            var old = _internalItems[location];
-            var isVisible = _predicate(item);
-            _internalItems.Insert(location, new KeyValuePair<bool, T>(isVisible, item));
-            RaiseCollectionInsert(item, old.Value);
-            if (isVisible)
-            {
-                RaisePropertyChanged(nameof(VisibleCount));
-            }
-        }
-        public void RemoveAt(int index)
-        {
-            var removed = _internalItems[index];
-            _internalItems.RemoveAt(index);
-            RaiseCollectionRemove(removed.Value);
-        }
-        public T this[int index]
-        {
-            get => _internalItems[index].Value;
-            set => _internalItems[index] = new KeyValuePair<bool, T>(_predicate(value), value);
-        }
-        #endregion
+            AddItemPropertyChangedHandler(item);
+            _internalItems.Add(new ItemContainer(isVisible, item));
 
-        #region public methods
+            if (isVisible)
+            {
+                RaiseCollectionAdd(item);
+                RaisePropertyChanged(nameof(VisibleCount));
+            }
+        }
+        public void AddRange(IEnumerable<T> items)
+        {
+
+            var anyVisible = items.Any(i => _predicate(i));
+
+            foreach (var item in items)
+            {
+                if (_internalItems.Any(i => i.Item == item))
+                {
+                    continue;
+                }
+                AddItemPropertyChangedHandler(item);
+                _internalItems.Add(new ItemContainer(_predicate(item), item));
+            }
+
+            if (anyVisible)
+            {
+                RaiseCollectionAddRange(items);
+                RaisePropertyChanged(nameof(VisibleCount));
+            }
+        }
         public void Clear()
         {
-            var hadVisible = _internalItems.Any(i => i.Key);
+            var hadVisible = _internalItems.Any(i => i.Predicate);
+            foreach (var item in _internalItems)
+            {
+                RemoveItemPropertyChangedHandler(item.Item);
+            }
             _internalItems.Clear();
-            RaiseCollectionClear();
+
             if (hadVisible)
             {
+                RaiseCollectionClear();
                 RaisePropertyChanged(nameof(VisibleCount));
             }
         }
         public bool Remove(T item)
         {
-            var state = _internalItems.RemoveAll(i => i.Value == item);
-            RaiseCollectionRemove(item);
+            var removedVisible = _internalItems.Any(i => i.Item == item && _predicate(i.Item));
+            var state = _internalItems.RemoveAll(i => i.Item == item);
+            if (removedVisible)
+            {
+                RemoveItemPropertyChangedHandler(item);
+                RaiseCollectionRemove(item);
+            }
+            if (state >= 0)
+            {
+                RaisePropertyChanged(nameof(Count));
+            }
             return state > 0;
         }
         public bool Contains(T item)
         {
-            return _internalItems.Any(i => i.Value == item);
+            return _internalItems.Any(i => i.Item == item);
+        }
+        public void RecalculatePredicate()
+        {
+            foreach (var item in _internalItems)
+            {
+                var newPredicate = _predicate(item.Item);
+                if (item.Predicate != newPredicate)
+                {
+                    item.Predicate = newPredicate;
+                    if (newPredicate)
+                    {
+                        RaiseCollectionAdd(item.Item);
+                    }
+                    else
+                    {
+                        RaiseCollectionRemove(item.Item);
+                    }
+                }
+            }
         }
         #endregion
 
@@ -124,6 +151,11 @@ namespace MvvMHelpers.core
         private void RaiseCollectionAdd(T item)
         {
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item));
+            RaisePropertyChanged(nameof(Count));
+        }
+        private void RaiseCollectionAddRange(IEnumerable<T> items)
+        {
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, items));
             RaisePropertyChanged(nameof(Count));
         }
         private void RaiseCollectionClear()
@@ -136,17 +168,63 @@ namespace MvvMHelpers.core
             CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, item));
             RaisePropertyChanged(nameof(Count));
         }
-        private void RaiseCollectionInsert(T item, T old)
-        {
-            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, item, old));
-            RaisePropertyChanged(nameof(Count));
-        }
         private void RaisePropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+        private void AddItemPropertyChangedHandler(T item)
+        {
+            if (item is not INotifyPropertyChanged notifyItem)
+            {
+                return;
+            }
+            notifyItem.PropertyChanged += HandleItemPropertyChanged;
+        }
+        private void RemoveItemPropertyChangedHandler(T item)
+        {
+            if (item is not INotifyPropertyChanged notifyItem)
+            {
+                return;
+            }
+            notifyItem.PropertyChanged -= HandleItemPropertyChanged;
+        }
+        private void HandleItemPropertyChanged(object sender, PropertyChangedEventArgs args)
+        {
+            if (sender is not T item)
+            {
+                return;
+            }
+            var collectionItem = _internalItems.FirstOrDefault(i => i.Item == item);
+
+            var newPredicate = _predicate(item);
+            if (newPredicate != collectionItem.Predicate)
+            {
+                collectionItem.Predicate = newPredicate;
+                if (collectionItem.Predicate)
+                {
+                    RaiseCollectionAdd(collectionItem.Item);
+                }
+                else
+                {
+                    RaiseCollectionRemove(collectionItem.Item);
+                }
+            }
+        }
         #endregion
 
+
+        private class ItemContainer
+        {
+            public bool Predicate { get; set; }
+            public T Item { get; set; }
+
+            public ItemContainer(bool isVisible, T item)
+            {
+                Predicate = isVisible;
+                Item = item;
+            }
+
+        }
     }
 }
 
