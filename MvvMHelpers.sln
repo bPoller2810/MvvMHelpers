@@ -10,9 +10,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		C:\Users\bernh\Desktop\cs.editorconfig = C:\Users\bernh\Desktop\cs.editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvvmHelpers.testbench", "MvvmHelpers.testbench\MvvmHelpers.testbench.csproj", "{6737A68A-E2D2-445D-916F-F1006EF70097}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MvvmHelpers.testbench", "MvvmHelpers.testbench\MvvmHelpers.testbench.csproj", "{6737A68A-E2D2-445D-916F-F1006EF70097}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvvmHelpers.test", "MvvmHelpers.test\MvvmHelpers.test.csproj", "{5229C621-03C3-4AC0-93C2-A9565107C181}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MvvmHelpers.test", "MvvmHelpers.test\MvvmHelpers.test.csproj", "{5229C621-03C3-4AC0-93C2-A9565107C181}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MvvMHelpers.Generators", "MvvMHelpers.Generators\MvvMHelpers.Generators.csproj", "{34A30E9B-F336-4193-A0D4-200EB2119F24}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{5229C621-03C3-4AC0-93C2-A9565107C181}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5229C621-03C3-4AC0-93C2-A9565107C181}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5229C621-03C3-4AC0-93C2-A9565107C181}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34A30E9B-F336-4193-A0D4-200EB2119F24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34A30E9B-F336-4193-A0D4-200EB2119F24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34A30E9B-F336-4193-A0D4-200EB2119F24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34A30E9B-F336-4193-A0D4-200EB2119F24}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

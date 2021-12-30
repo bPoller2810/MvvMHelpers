@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Nullable>enable</Nullable>
     <PackageId>bpoller.MvvMHelpers.core</PackageId>
     <LangVersion>9.0</LangVersion>
     <Version>1.0.4</Version>

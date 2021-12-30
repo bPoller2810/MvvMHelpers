@@ -10,7 +10,7 @@ namespace MvvMHelpers.core
     {
 
         #region property helper
-        protected bool Set<T>(ref T storage, T value, [CallerMemberName] string propertyName = null)
+        protected bool Set<T>(ref T storage, T value, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(storage, value))
             {
@@ -24,18 +24,18 @@ namespace MvvMHelpers.core
         #endregion
 
         #region INotifyPropertyChanged
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
 
-        public void OnPropertyChanged([CallerMemberName] string propertyname = null)
+        public void OnPropertyChanged([CallerMemberName] string? propertyname = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyname));
         }
         #endregion
 
         #region INotifyPropertyChanging
-        public event PropertyChangingEventHandler PropertyChanging;
+        public event PropertyChangingEventHandler? PropertyChanging;
 
-        public void OnPropertyChanging([CallerMemberName] string propertyname = null)
+        public void OnPropertyChanging([CallerMemberName] string? propertyname = null)
         {
             PropertyChanging?.Invoke(this, new PropertyChangingEventArgs(propertyname));
         }

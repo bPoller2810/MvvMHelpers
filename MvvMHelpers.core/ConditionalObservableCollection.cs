@@ -30,11 +30,11 @@ namespace MvvMHelpers.core
         #endregion
 
         #region INotifyCollectionChanged
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
+        public event NotifyCollectionChangedEventHandler? CollectionChanged;
         #endregion
 
         #region INotifyPropertyChanged
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
         #endregion
 
         #region IEnumerable<T>
