@@ -1,0 +1,106 @@
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+
+namespace MvvMHelpers.Generators.ItemViewModel
+{
+
+    [Generator]
+    public class ItemViewModelPropertyGenerator : ISourceGenerator
+    {
+
+        #region ISourceGenerator
+        public void Execute(GeneratorExecutionContext context)
+        {
+            if (context.SyntaxReceiver is not ItemViewModelReceiver receiver)
+            {//should not happen, but to ensure the correct type and pattern cast it we do it anyway
+                return;
+            }
+
+            foreach (var vmClass in receiver.CandidateClasses)
+            {
+                #region gather required information
+                var vmSymbol = GetItemViewModelSymbol(vmClass, context.Compilation);
+                var targetNamespace = vmSymbol.ContainingNamespace.ToDisplayString();
+                var className = vmSymbol.Name;
+                var itemProperties = GetItemProperties(vmSymbol);
+                var generatedFilename = BuildFilename(vmClass.SyntaxTree.FilePath);
+                #endregion
+
+                var sb = new StringBuilder();
+
+                #region start namespace and class
+                sb.AppendLine($"namespace {targetNamespace}");
+                sb.AppendLine("{");
+                sb.AppendLine($"\tpublic partial class {className}");
+                sb.AppendLine("\t{");
+                sb.AppendLine();
+                #endregion
+
+                #region add properties
+                foreach (var prop in itemProperties)
+                {
+                    AddProperty(prop.Type.Name, prop.Name, prop.Type.NullableAnnotation == NullableAnnotation.Annotated, ref sb);
+                    sb.AppendLine();
+                }
+                #endregion
+
+                #region end class and namespace
+                sb.AppendLine("\t}");
+                sb.AppendLine("}");
+                #endregion
+
+                context.AddSource(generatedFilename, sb.ToString());
+            }
+
+        }
+
+        public void Initialize(GeneratorInitializationContext context)
+        {
+            context.RegisterForSyntaxNotifications(() => new ItemViewModelReceiver());
+        }
+        #endregion
+
+        #region helper
+        private INamedTypeSymbol GetItemViewModelSymbol(ClassDeclarationSyntax cds, Compilation compilation)
+        {
+            return compilation.GetSemanticModel(cds.SyntaxTree).GetDeclaredSymbol(cds) as INamedTypeSymbol;
+        }
+        private IEnumerable<IPropertySymbol> GetItemProperties(INamedTypeSymbol classSymbol)
+        {
+            return classSymbol
+                .BaseType
+                .TypeArguments
+                .First()
+                .GetMembers()
+                .Where(m => m is IPropertySymbol)
+                .Cast<IPropertySymbol>();
+        }
+        private string BuildFilename(string originalPath)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(originalPath);
+            var fileExtension = Path.GetExtension(originalPath);
+            return $"{fileName}.mvvm.{fileExtension}";
+        }
+        private void AddProperty(string type, string name, bool isNullable, ref StringBuilder sb)
+        {
+            sb.AppendLine($"\t\tpublic {type}{(isNullable ? "?" : string.Empty)} {name}");
+            sb.AppendLine("\t\t{");
+            sb.AppendLine($"\t\t\tget => Item.{name};");
+            sb.AppendLine("\t\t\tset");
+            sb.AppendLine("\t\t\t{");
+            sb.AppendLine($"\t\t\t\tif (Item.{name} != value)");
+            sb.AppendLine("\t\t\t\t{");
+            sb.AppendLine($"\t\t\t\t\tItem.{name} = value;");
+            sb.AppendLine("\t\t\t\t\tOnPropertyChanged();");
+            sb.AppendLine("\t\t\t\t}");
+            sb.AppendLine("\t\t\t}");
+            sb.AppendLine("\t\t}");
+        }
+        #endregion
+
+    }
+}
