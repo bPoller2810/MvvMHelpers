@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,6 +27,7 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 var vmSymbol = GetItemViewModelSymbol(vmClass, context.Compilation);
                 var targetNamespace = vmSymbol.ContainingNamespace.ToDisplayString();
                 var className = vmSymbol.Name;
+                var itemIsRecord = IsItemTypeARecord(vmSymbol);
                 var itemProperties = GetItemProperties(vmSymbol);
                 var generatedFilename = BuildFilename(vmClass.SyntaxTree.FilePath);
                 #endregion
@@ -43,7 +45,7 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 #region add properties
                 foreach (var prop in itemProperties)
                 {
-                    AddProperty(prop.Type.Name, prop.Name, prop.Type.NullableAnnotation == NullableAnnotation.Annotated, ref sb);
+                    AddProperty(prop.Type.Name, prop.Name, prop.Type.NullableAnnotation == NullableAnnotation.Annotated, itemIsRecord, ref sb);
                     sb.AppendLine();
                 }
                 #endregion
@@ -54,12 +56,19 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 #endregion
 
                 context.AddSource(generatedFilename, sb.ToString());
+                System.Console.WriteLine($"Generated {itemProperties.Count()} ItemViewModel properties for {className}");
             }
 
         }
 
         public void Initialize(GeneratorInitializationContext context)
         {
+#if DEBUG
+            if (!Debugger.IsAttached)
+            {
+                //TODO: Debugger.Launch(); // just for debugging
+            }
+#endif
             context.RegisterForSyntaxNotifications(() => new ItemViewModelReceiver());
         }
         #endregion
@@ -76,8 +85,16 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 .TypeArguments
                 .First()
                 .GetMembers()
-                .Where(m => m is IPropertySymbol)
+                .Where(m => m is IPropertySymbol s && !s.IsReadOnly)
                 .Cast<IPropertySymbol>();
+        }
+        private bool IsItemTypeARecord(INamedTypeSymbol classSymbol)
+        {
+            return classSymbol
+                .BaseType
+                .TypeArguments
+                .First()
+                .IsRecord;
         }
         private string BuildFilename(string originalPath)
         {
@@ -85,7 +102,7 @@ namespace MvvMHelpers.Generators.ItemViewModel
             var fileExtension = Path.GetExtension(originalPath);
             return $"{fileName}.mvvm.{fileExtension}";
         }
-        private void AddProperty(string type, string name, bool isNullable, ref StringBuilder sb)
+        private void AddProperty(string type, string name, bool isNullable, bool isRecord, ref StringBuilder sb)
         {
             sb.AppendLine($"\t\tpublic {type}{(isNullable ? "?" : string.Empty)} {name}");
             sb.AppendLine("\t\t{");
@@ -94,11 +111,17 @@ namespace MvvMHelpers.Generators.ItemViewModel
             sb.AppendLine("\t\t\t{");
             sb.AppendLine($"\t\t\t\tif (Item.{name} != value)");
             sb.AppendLine("\t\t\t\t{");
-            sb.AppendLine($"\t\t\t\t\tItem.{name} = value;");
+            sb.AppendLine($"\t\t\t\t\t{GetPropertyAssignString(name, isRecord)}");
             sb.AppendLine("\t\t\t\t\tOnPropertyChanged();");
             sb.AppendLine("\t\t\t\t}");
             sb.AppendLine("\t\t\t}");
             sb.AppendLine("\t\t}");
+        }
+        private string GetPropertyAssignString(string name, bool isRecord)
+        {
+            return isRecord
+                ? $"Item = Item with {{ {name} = value }};"
+                : $"Item.{name} = value;";
         }
         #endregion
 

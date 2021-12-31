@@ -1,6 +1,6 @@
 ﻿using MvvMHelpers.core;
 
-namespace MvvmHelpers.testbench.TestListViewModel;
+namespace MvvmHelpers.testbench.TestListViewModel.ClassTest;
 
 
 [GenerateItemProperties]

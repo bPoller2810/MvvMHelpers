@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
@@ -20,11 +21,10 @@ namespace MvvMHelpers.Generators.ItemViewModel
             if (syntaxNode is ClassDeclarationSyntax cds &&
                 cds.Modifiers
                     .Any(m => m.Text == PARTIAL) &&
-                cds.BaseList is not null &&
-                cds.BaseList.Types
+                cds.BaseList?.Types
                     .Any(t => t is SimpleBaseTypeSyntax sbts &&
                          sbts.Type is GenericNameSyntax gns &&
-                         gns.Identifier.Text == ITEM_VIEW_MODEL_NAME) &&
+                         gns.Identifier.Text == ITEM_VIEW_MODEL_NAME) is true &&
                 cds.AttributeLists
                     .Any(a => a.Attributes
                         .Any(aa => aa is AttributeSyntax asx &&
@@ -34,5 +34,6 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 CandidateClasses.Add(cds);
             }
         }
+
     }
 }

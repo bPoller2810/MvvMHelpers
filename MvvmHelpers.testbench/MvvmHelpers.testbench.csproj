@@ -8,10 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MvvMHelpers.core\MvvMHelpers.core.csproj" />
-    <ProjectReference Include="..\MvvMHelpers.Generators\MvvMHelpers.Generators.csproj" 
-                      OutputItemType="Analyzer" 
-                      ReferenceOutputAssembly="false" />
+    <PackageReference Include="bpoller.MvvMHelpers.core" Version="1.0.5" />
+    <PackageReference Include="bpoller.MvvMHelpers.Generators" Version="1.0.5" />
   </ItemGroup>
 
 </Project>

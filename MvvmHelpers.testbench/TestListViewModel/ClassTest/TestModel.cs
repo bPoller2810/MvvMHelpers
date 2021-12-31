@@ -1,4 +1,4 @@
-﻿namespace MvvmHelpers.testbench.TestListViewModel;
+﻿namespace MvvmHelpers.testbench.TestListViewModel.ClassTest;
 
 public class TestModel
 {

@@ -10,7 +10,11 @@ namespace MvvMHelpers.core
         /// The model item that will be set in ConfigureItem
         /// </summary>
         /// <exception cref="InvalidOperationException"></exception>
-        public TModel Item => _item ?? throw new InvalidOperationException("Item is not yet initialized");
+        public TModel Item
+        {
+            get => _item ?? throw new InvalidOperationException("Item is not yet initialized");
+            protected set => _item = value;
+        }
 
         /// <summary>
         /// <para>A way to initialize this ViewModel when the model gets applied</para>
