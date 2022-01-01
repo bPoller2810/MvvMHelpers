@@ -1,19 +1,6 @@
 ﻿using MvvmHelpers.testbench.TestListViewModel.ClassTest;
 using MvvmHelpers.testbench.TestListViewModel.RecordTest;
 
-
-//var collection = new ConditionalObservableCollection<string>(s => s.Length > 0);
-//collection.Add("hi");
-//collection.Add("");
-//collection.Add("hio");
-//collection.AddRange(new List<string> { "1", "2" });
-
-//var count = collection.Count;
-//var visible = collection.VisibleCount;
-
-
-
-
 var list = new TestListViewModel();
 await list.LoadItems();
 var firstItem = list.Items.First();

@@ -13,6 +13,8 @@ namespace MvvMHelpers.Generators.ItemViewModel
     public class ItemViewModelPropertyGenerator : ISourceGenerator
     {
 
+        private const string RECORD_EQUALITY_CONTRACT = "EqualityContract";
+
         #region ISourceGenerator
         public void Execute(GeneratorExecutionContext context)
         {
@@ -54,8 +56,8 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 sb.AppendLine("\t}");
                 sb.AppendLine("}");
                 #endregion
-
                 context.AddSource(generatedFilename, sb.ToString());
+                
                 System.Console.WriteLine($"Generated {itemProperties.Count()} ItemViewModel properties for {className}");
             }
 
@@ -66,7 +68,7 @@ namespace MvvMHelpers.Generators.ItemViewModel
 #if DEBUG
             if (!Debugger.IsAttached)
             {
-                //TODO: Debugger.Launch(); // just for debugging
+                //Debugger.Launch(); // just for debugging
             }
 #endif
             context.RegisterForSyntaxNotifications(() => new ItemViewModelReceiver());
@@ -85,7 +87,10 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 .TypeArguments
                 .First()
                 .GetMembers()
-                .Where(m => m is IPropertySymbol s && !s.IsReadOnly)
+                .Where(m => m is IPropertySymbol s && 
+                    !s.IsReadOnly && 
+                    s.DeclaredAccessibility == Accessibility.Public && //not readonly and public should be enough, but as nuget here happens interesting stuff...
+                    s.Name != RECORD_EQUALITY_CONTRACT)
                 .Cast<IPropertySymbol>();
         }
         private bool IsItemTypeARecord(INamedTypeSymbol classSymbol)
