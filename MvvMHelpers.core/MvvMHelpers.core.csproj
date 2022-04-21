@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <PackageId>bpoller.MvvMHelpers.core</PackageId>
     <LangVersion>9.0</LangVersion>
-    <Version>1.0.5</Version>
+    <Version>1.0.6</Version>
   </PropertyGroup>
 
 </Project>

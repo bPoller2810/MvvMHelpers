@@ -19,6 +19,7 @@ namespace MvvMHelpers.core
         #region properties
         public int Count => _internalItems.Count;
         public int VisibleCount => _internalItems.Count(i => _predicate(i.Item));
+        public IEnumerable<T> All => _internalItems.Select(i => i.Item);
         #endregion
 
         #region ctor
@@ -127,7 +128,7 @@ namespace MvvMHelpers.core
             return _internalItems.Any(i => i.Item == item);
         }
         public void RecalculatePredicate()
-        {
+        {//TODO: exception in filter see => WPF_APP project
             foreach (var item in _internalItems)
             {
                 var newPredicate = _predicate(item.Item);
