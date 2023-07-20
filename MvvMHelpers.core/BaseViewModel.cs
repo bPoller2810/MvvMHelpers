@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace MvvMHelpers.core
 {
@@ -10,15 +9,16 @@ namespace MvvMHelpers.core
     {
 
         #region property helper
-        protected bool Set<T>(ref T storage, T value, Action? changedAction = null, [CallerMemberName] string? propertyName = null)
+        protected bool Set<T>(ref T storage, T value, Action? changedAction = null, Action<T, T>? changingAction = null, [CallerMemberName] string? propertyName = null)
         {
             if (EqualityComparer<T>.Default.Equals(storage, value))
             {
                 return false;
             }
-            OnPropertyChanging(propertyName);
+            this.OnPropertyChanging(propertyName);
+            changingAction?.Invoke(storage, value);
             storage = value;
-            OnPropertyChanged(propertyName);
+            this.OnPropertyChanged(propertyName);
             changedAction?.Invoke();
             return true;
         }
