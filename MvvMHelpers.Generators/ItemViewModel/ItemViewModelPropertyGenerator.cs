@@ -1,4 +1,5 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -29,6 +30,11 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 var vmSymbol = GetItemViewModelSymbol(vmClass, context.Compilation);
                 var targetNamespace = vmSymbol.ContainingNamespace.ToDisplayString();
                 var className = vmSymbol.Name;
+
+                var propertiesToIgnore = GetIgnoredProperties(vmClass, context.Compilation);
+
+
+
                 var itemIsRecord = IsItemTypeARecord(vmSymbol);
                 var itemProperties = GetItemProperties(vmSymbol);
                 var generatedFilename = BuildFilename(vmClass.SyntaxTree.FilePath);
@@ -47,6 +53,10 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 #region add properties
                 foreach (var prop in itemProperties)
                 {
+                    if (propertiesToIgnore.Any(p => p == prop.Name))
+                    {
+                        continue;
+                    }
                     AddProperty(prop.Type.Name, prop.Name, prop.Type.NullableAnnotation == NullableAnnotation.Annotated, itemIsRecord, ref sb);
                     sb.AppendLine();
                 }
@@ -57,7 +67,7 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 sb.AppendLine("}");
                 #endregion
                 context.AddSource(generatedFilename, sb.ToString());
-                
+
                 System.Console.WriteLine($"Generated {itemProperties.Count()} ItemViewModel properties for {className}");
             }
 
@@ -68,7 +78,7 @@ namespace MvvMHelpers.Generators.ItemViewModel
 #if DEBUG
             if (!Debugger.IsAttached)
             {
-                //Debugger.Launch(); // just for debugging
+                Debugger.Launch(); // just for debugging
             }
 #endif
             context.RegisterForSyntaxNotifications(() => new ItemViewModelReceiver());
@@ -87,8 +97,8 @@ namespace MvvMHelpers.Generators.ItemViewModel
                 .TypeArguments
                 .First()
                 .GetMembers()
-                .Where(m => m is IPropertySymbol s && 
-                    !s.IsReadOnly && 
+                .Where(m => m is IPropertySymbol s &&
+                    !s.IsReadOnly &&
                     s.DeclaredAccessibility == Accessibility.Public && //not readonly and public should be enough, but as nuget here happens interesting stuff...
                     s.Name != RECORD_EQUALITY_CONTRACT)
                 .Cast<IPropertySymbol>();
@@ -127,6 +137,11 @@ namespace MvvMHelpers.Generators.ItemViewModel
             return isRecord
                 ? $"Item = Item with {{ {name} = value }};"
                 : $"Item.{name} = value;";
+        }
+        private string[] GetIgnoredProperties(ClassDeclarationSyntax cds, Compilation compilation)
+        {
+           
+            return null;
         }
         #endregion
 

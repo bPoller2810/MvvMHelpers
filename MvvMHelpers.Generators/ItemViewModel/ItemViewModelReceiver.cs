@@ -11,27 +11,37 @@ namespace MvvMHelpers.Generators.ItemViewModel
     internal class ItemViewModelReceiver : ISyntaxReceiver
     {
         private const string ITEM_VIEW_MODEL_NAME = "BaseItemViewModel";
-        private const string PARTIAL = "partial";
         private const string GENERATE_ITEM_PROPERTY = "GenerateItemProperties";
 
         public List<ClassDeclarationSyntax> CandidateClasses { get; } = new();
 
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
-            if (syntaxNode is ClassDeclarationSyntax cds &&
-                cds.Modifiers
-                    .Any(m => m.Text == PARTIAL) &&
-                cds.BaseList?.Types
-                    .Any(t => t is SimpleBaseTypeSyntax sbts &&
-                         sbts.Type is GenericNameSyntax gns &&
-                         gns.Identifier.Text == ITEM_VIEW_MODEL_NAME) is true &&
-                cds.AttributeLists
-                    .Any(a => a.Attributes
-                        .Any(aa => aa is AttributeSyntax asx &&
-                            asx.Name is IdentifierNameSyntax ins &&
-                            ins.Identifier.Text == GENERATE_ITEM_PROPERTY)))
+            if (syntaxNode is ClassDeclarationSyntax
+                {
+                    BaseList.Types: { } baseListTypes,
+                    Modifiers: { } modifiers,
+                    AttributeLists: { } attributeLists
+                }
+                && baseListTypes.Any(t => t is SimpleBaseTypeSyntax //check the base type
+                {
+                    Type: GenericNameSyntax
+                    {
+                        Identifier.Text: ITEM_VIEW_MODEL_NAME
+                    }
+                })
+                && modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)) //ensure the class is partial
+                && attributeLists //check tif the class is decorated with our attribute
+                    .SelectMany(a => a.Attributes)
+                    .Any(aa => aa is AttributeSyntax
+                    {
+                        Name: IdentifierNameSyntax
+                        {
+                            Identifier.Text: GENERATE_ITEM_PROPERTY
+                        }
+                    }))
             {
-                CandidateClasses.Add(cds);
+                CandidateClasses.Add(syntaxNode as ClassDeclarationSyntax);
             }
         }
 
